@@ -69,12 +69,15 @@ function renderHud() {
   el('turnbox').textContent = 'Turn ' + G.turn;
   el('emberbox').textContent = '🔥 Ember ' + G.ember + ' / ' + MAX_EMBER;
   el('deckinfo').textContent = 'Deck ' + G.deck.length + ' · Discard ' + G.discard.length + ' · Chart ' + emptyCells().length + ' empty';
-  const tg = el('telegraph');
+  // Telegraph lives in the chart subtitle line, right under THE STAR CHART,
+  // so it can never cover the chart itself.
+  const sub = el('chartsub');
   if (G.phase === 'play' && G.rivalPlan && !G.chart[G.rivalPlan.cell]) {
-    tg.style.display = 'block';
-    tg.textContent = '⚠ ASTRAEA is eyeing cell ' + (G.rivalPlan.cell + 1) + ' — a ' + G.rivalPlan.card.suitName + ' ' + G.rivalPlan.card.value + ' star! Block it or brace!';
+    sub.innerHTML = '⚠ <b style="color:#ff8080">ASTRAEA is eyeing cell ' + (G.rivalPlan.cell + 1) +
+      ' — a ' + G.rivalPlan.card.suitName + ' ' + G.rivalPlan.card.value +
+      ' star! Block it or brace!</b>';
   } else {
-    tg.style.display = 'none';
+    sub.textContent = 'Both sides place stars here — complete a line to unleash its reward!';
   }
 }
 

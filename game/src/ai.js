@@ -80,15 +80,4 @@ function rivalTakeTurn() {
   if (idx >= 0) G.foeDeck.splice(idx, 1);
   placeStar('foe', plan.card, plan.cell);
   G.rivalPlan = null;
-  if (G.over) return;
-  // ASTRAEA sometimes plays a second, weaker star when she has ember to spare.
-  if (G.foeEmber >= 2 && emptyCells().length > 0 && Math.random() < 0.5) {
-    const cell2 = bestCellFor('foe');
-    const card2 = pickRivalCard();
-    if (cell2 >= 0 && card2 && card2.cost <= G.foeEmber) {
-      const idx2 = G.foeDeck.indexOf(card2);
-      if (idx2 >= 0) G.foeDeck.splice(idx2, 1);
-      placeStar('foe', card2, cell2);
-    }
-  }
 }

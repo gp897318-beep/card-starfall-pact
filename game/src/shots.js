@@ -40,7 +40,7 @@ function setupCoverScene() {
   if (cardEls[0]) {
     const fly = cardEls[0].cloneNode(true);
     fly.classList.add('flying');
-    fly.style.left = '560px'; fly.style.top = '180px';
+    fly.style.left = '640px'; fly.style.top = '195px';
     document.getElementById('app').appendChild(fly);
   }
   floatDamage('-8', 880, 120);
@@ -57,7 +57,8 @@ function setupWinScene() {
   newGame(20261123);
   G.phase = 'play';
   G.life.foe = 0;
-  G.stats.turns = 9; G.stats.damageDealt = 34; G.stats.cardsPlayed = 14; G.stats.linesCompleted = 3;
+  G.turn = 9;
+  G.stats.damageDealt = 34; G.stats.cardsPlayed = 14; G.stats.linesCompleted = 3;
   endGame('win');
   renderAll();
 }
@@ -66,7 +67,8 @@ function setupLossScene() {
   newGame(20261123);
   G.phase = 'play';
   G.life.you = 0;
-  G.stats.turns = 11; G.stats.damageDealt = 22; G.stats.cardsPlayed = 16; G.stats.linesCompleted = 2;
+  G.turn = 11;
+  G.stats.damageDealt = 22; G.stats.cardsPlayed = 16; G.stats.linesCompleted = 2;
   endGame('loss');
   renderAll();
 }

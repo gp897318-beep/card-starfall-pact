@@ -24,4 +24,5 @@ buildDossier(out, {
 });
 
 const entries = readdirSync(out).sort();
-console.log('wrote ' + out + ': ' + entries.join(', '));
+const dossierBytes = statSync(join(out, 'dossier.json')).size;
+console.log('wrote ' + out + ': ' + entries.join(', ') + ' (dossier.json ' + dossierBytes + ' bytes)');

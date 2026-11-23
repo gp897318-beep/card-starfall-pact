@@ -189,6 +189,11 @@ function endGame(result) {
 }
 
 function startTurn() {
+  // A full chart falls away and a new sky opens, so the game can never stall.
+  if (emptyCells().length === 0) {
+    G.chart = [null, null, null, null, null, null, null, null, null];
+    addLog('✦ The chart is full — the stars fall and a <b>new sky</b> opens.');
+  }
   G.turn++;
   G.ember = Math.min(MAX_EMBER, G.ember + 2);
   G.foeEmber = Math.min(MAX_EMBER, G.foeEmber + 2);

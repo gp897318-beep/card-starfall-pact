@@ -22,9 +22,9 @@ window.__auto = function (seed, mode) {
   let guard = 0;
   while (!G.over && guard < 400) {
     guard++;
-    // Player turn: place up to 2 cards while ember allows.
+    // Player turn: place one card (one star per turn, like the rival).
     let placed = 0;
-    while (placed < 2 && !G.over) {
+    while (placed < 1 && !G.over) {
       const afford = G.hand.map(function (c, i) { return { c: c, i: i }; })
         .filter(function (x) { return x.c.cost <= G.ember; });
       if (!afford.length) break;
