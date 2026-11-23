@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>STARFALL PACT — a shared star-chart card duel</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1280px; height: 800px; overflow: hidden; background: #070a1e;
+    font-family: Georgia, 'Times New Roman', serif; color: #e8ecff; }
+  #app { position: relative; width: 1280px; height: 800px;
+    background: radial-gradient(ellipse 900px 500px at 50% 30%, #1b2350 0%, #0d1130 55%, #070a1e 100%); }
+  .stars-bg { position: absolute; inset: 0; pointer-events: none; opacity: .9; }
+  /* ---------- top bar ---------- */
+  #topbar { position: absolute; top: 0; left: 0; right: 0; height: 64px; display: flex;
+    align-items: center; gap: 14px; padding: 0 16px;
+    background: linear-gradient(180deg, rgba(10,14,40,.95), rgba(10,14,40,.65));
+    border-bottom: 2px solid #c9a227; z-index: 5; }
+  #topbar .title { font-size: 26px; letter-spacing: 3px; color: #ffd75e; font-weight: bold;
+    text-shadow: 0 0 14px rgba(255,215,94,.7); white-space: nowrap; }
+  #topbar .objective { font-size: 13px; color: #bcd0ff; font-style: italic; white-space: nowrap; }
+  .lifebox { display: flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 10px;
+    border: 2px solid #555; background: rgba(0,0,0,.4); font-size: 15px; white-space: nowrap; }
+  .lifebox.you { border-color: #ffd75e; } .lifebox.foe { border-color: #ff5a5a; }
+  .lifebox .heart { font-size: 20px; }
+  .lifebox .num { font-size: 22px; font-weight: bold; }
+  .lifebox .shield { color: #7ec8ff; font-size: 14px; }
+  #turnbox { font-size: 15px; color: #ffe9a8; white-space: nowrap; }
+  #emberbox { font-size: 15px; color: #ffb347; white-space: nowrap; }
+  /* ---------- rival hand ---------- */
+  #foehand { position: absolute; top: 70px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 6px; z-index: 3; }
+  #foehand .label { position: absolute; left: -150px; top: 18px; font-size: 13px; color: #ff9a9a;
+    width: 140px; text-align: right; }
+  .minicard { width: 44px; height: 62px; border-radius: 6px; border: 2px solid #8a6d1f;
+    background: repeating-linear-gradient(45deg, #2a1e5e, #2a1e5e 6px, #1c1445 6px, #1c1445 12px);
+    box-shadow: 0 2px 6px rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center;
+    font-size: 22px; color: #ffd75e; }
+  /* ---------- middle row ---------- */
+  #mid { position: absolute; top: 140px; left: 0; right: 0; height: 400px; display: flex; }
+  #logpanel { width: 190px; padding: 8px 10px; font-size: 12.5px; line-height: 1.5; color: #c6d2ff; }
+  #logpanel h3 { color: #ffd75e; font-size: 14px; letter-spacing: 2px; margin-bottom: 6px; }
+  #logpanel .logline { margin-bottom: 4px; }
+  #logpanel .logline b { color: #fff; }
+  /* star chart */
+  #chartwrap { flex: 1; display: flex; flex-direction: column; align-items: center; }
+  #charttitle { font-size: 17px; letter-spacing: 4px; color: #ffd75e; margin-bottom: 2px;
+    text-shadow: 0 0 10px rgba(255,215,94,.6); }
+  #chartsub { font-size: 12px; color: #9fb4ff; margin-bottom: 6px; }
+  #chart { position: relative; display: grid; grid-template-columns: repeat(3, 104px);
+    grid-template-rows: repeat(3, 104px); gap: 8px; padding: 10px;
+    background: rgba(8,12,38,.75); border: 2px solid #6f7fd0; border-radius: 14px;
+    box-shadow: 0 0 30px rgba(120,140,255,.35), inset 0 0 40px rgba(80,100,220,.25); }
+  .cell { position: relative; border-radius: 10px; border: 2px dashed #4a558f;
+    background: radial-gradient(circle at 50% 50%, #141a42, #0a0e2a);
+    cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .cell:hover { border-color: #ffd75e; box-shadow: 0 0 12px rgba(255,215,94,.5); }
+  .cell.empty::after { content: '☆'; font-size: 34px; color: #39418a; }
+  .cell.armed { border-style: solid; border-color: #ffd75e; animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100% { box-shadow: 0 0 6px rgba(255,215,94,.4); } 50% { box-shadow: 0 0 18px rgba(255,215,94,.9); } }
+  .cell .starval { font-size: 34px; font-weight: bold; line-height: 1; }
+  .cell .starsuit { font-size: 22px; line-height: 1; }
+  .cell.you { border-style: solid; border-color: #ffd75e; background: radial-gradient(circle at 50% 40%, #4a3a10, #171204); }
+  .cell.you .starval { color: #ffe9a8; text-shadow: 0 0 12px #ffd75e; }
+  .cell.foe { border-style: solid; border-color: #ff5a5a; background: radial-gradient(circle at 50% 40%, #4a1010, #1c0505); }
+  .cell.foe .starval { color: #ffb0b0; text-shadow: 0 0 12px #ff4040; }
+  .cell .ghost { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-size: 30px; color: #ff8080; animation: pulse 1s infinite; }
+  .cell .owner-tag { position: absolute; top: 2px; left: 5px; font-size: 10px; letter-spacing: 1px; }
+  .cell.you .owner-tag { color: #ffd75e; } .cell.foe .owner-tag { color: #ff8080; }
+  #chartrewards { display: flex; gap: 18px; margin-top: 6px; font-size: 12.5px; color: #d8e0ff; }
+  #chartrewards b { color: #ffd75e; }
+  /* legend panel */
+  #legend { width: 250px; padding: 8px 12px; border-left: 2px solid #3a4480; }
+  #legend h3 { color: #ffd75e; font-size: 15px; letter-spacing: 2px; margin-bottom: 8px; }
+  #legend .suit { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 8px; font-size: 13px; line-height: 1.35; }
+  #legend .suit .ic { font-size: 22px; width: 26px; text-align: center; flex: none; }
+  #legend .suit b { color: #fff; }
+  #legend .rule { font-size: 12.5px; color: #c6d2ff; margin-bottom: 6px; line-height: 1.4; }
+  #legend .rule b { color: #ffd75e; }
+  /* telegraph banner */
+  #telegraph { position: absolute; top: 148px; left: 50%; transform: translateX(-50%); z-index: 6;
+    background: rgba(60,8,8,.92); border: 2px solid #ff5a5a; border-radius: 10px; padding: 6px 14px;
+    font-size: 15px; color: #ffd0d0; display: none; box-shadow: 0 0 18px rgba(255,60,60,.5); }
+  /* ---------- player hand ---------- */
+  #handwrap { position: absolute; left: 0; right: 0; bottom: 64px; height: 190px;
+    display: flex; flex-direction: column; align-items: center; }
+  #handlabel { font-size: 13px; color: #9fb4ff; letter-spacing: 2px; margin-bottom: 4px; }
+  #hand { display: flex; gap: 10px; }
+  .card { width: 118px; height: 164px; border-radius: 12px; position: relative; cursor: pointer;
+    border: 3px solid #888; background: linear-gradient(180deg, #f4ead2, #e2d3ac);
+    color: #1a1408; box-shadow: 0 4px 10px rgba(0,0,0,.6); transition: transform .12s, box-shadow .12s;
+    user-select: none; }
+  .card:hover { transform: translateY(-12px); }
+  .card.selected { transform: translateY(-16px); border-color: #ffd75e; box-shadow: 0 0 22px rgba(255,215,94,.9); }
+  .card.unaffordable { opacity: .55; filter: grayscale(.5); }
+  .card .cost { position: absolute; top: 6px; left: 6px; width: 30px; height: 30px; border-radius: 50%;
+    background: #ff8c1a; color: #fff; font-weight: bold; font-size: 17px; display: flex;
+    align-items: center; justify-content: center; border: 2px solid #fff; }
+  .card .val { position: absolute; top: 4px; right: 8px; font-size: 30px; font-weight: bold; }
+  .card .suitic { position: absolute; top: 44px; left: 0; right: 0; text-align: center; font-size: 40px; }
+  .card .suitname { position: absolute; top: 88px; left: 0; right: 0; text-align: center;
+    font-size: 14px; font-weight: bold; letter-spacing: 1px; }
+  .card .rule { position: absolute; bottom: 8px; left: 6px; right: 6px; text-align: center;
+    font-size: 11.5px; line-height: 1.3; color: #3a2c10; }
+  .card .key { position: absolute; bottom: 2px; right: 6px; font-size: 10px; color: #888; }
+  .card.suit-ember { border-color: #e23b2e; } .card.suit-tide { border-color: #2e7fe2; }
+  .card.suit-stone { border-color: #8a5a2e; } .card.suit-gale { border-color: #2e9e4f; }
+  .card.flying { position: absolute; z-index: 20; transform: scale(1.25) rotate(-6deg);
+    box-shadow: 0 0 40px rgba(255,215,94,1); pointer-events: none; }
+  /* ---------- controls bar ---------- */
+  #controls { position: absolute; left: 0; right: 0; bottom: 0; height: 58px; display: flex;
+    align-items: center; justify-content: center; gap: 14px;
+    background: linear-gradient(0deg, rgba(10,14,40,.95), rgba(10,14,40,.6));
+    border-top: 2px solid #c9a227; z-index: 5; font-size: 13.5px; color: #bcd0ff; }
+  button { font-family: inherit; font-size: 16px; font-weight: bold; padding: 9px 20px;
+    border-radius: 10px; border: 2px solid #ffd75e; background: #3a2a05; color: #ffd75e; cursor: pointer; }
+  button:hover { background: #5a430a; }
+  button:disabled { opacity: .45; cursor: default; }
+  #hint { font-size: 13px; color: #9fb4ff; }
+  /* ---------- overlays: title / win / loss ---------- */
+  .overlay { position: absolute; inset: 0; z-index: 30; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; text-align: center;
+    background: radial-gradient(ellipse 800px 480px at 50% 40%, rgba(27,35,80,.97), rgba(5,7,20,.98)); }
+  .overlay h1 { font-size: 64px; letter-spacing: 8px; color: #ffd75e;
+    text-shadow: 0 0 30px rgba(255,215,94,.8); margin-bottom: 10px; }
+  .overlay h2 { font-size: 22px; color: #bcd0ff; font-weight: normal; font-style: italic; margin-bottom: 18px; }
+  .overlay .howto { font-size: 15px; line-height: 1.7; color: #d8e0ff; max-width: 760px; margin-bottom: 22px; }
+  .overlay .howto b { color: #ffd75e; }
+  .overlay .bigbtn { font-size: 22px; padding: 14px 34px; }
+  .overlay .stats { font-size: 17px; line-height: 1.8; color: #e8ecff; margin-bottom: 20px; }
+  .overlay .stats b { color: #ffd75e; }
+  #winScreen h1 { color: #7dff9a; text-shadow: 0 0 30px rgba(80,255,120,.8); }
+  #lossScreen h1 { color: #ff6a6a; text-shadow: 0 0 30px rgba(255,60,60,.8); }
+  .hidden { display: none !important; }
+  /* ---------- callouts (cover) ---------- */
+  .callout { position: absolute; z-index: 15; background: rgba(8,12,38,.92); border: 2px solid #ffd75e;
+    border-radius: 8px; padding: 6px 10px; font-size: 13px; color: #ffe9a8; max-width: 220px;
+    box-shadow: 0 0 14px rgba(255,215,94,.4); pointer-events: none; }
+  .callout::after { content: ''; position: absolute; width: 2px; height: 34px; background: #ffd75e; }
+  .callout.c1 { top: 150px; left: 18px; } .callout.c1::after { left: 190px; top: 30px; transform: rotate(-38deg); transform-origin: top; }
+  .callout.c2 { top: 150px; right: 18px; } .callout.c2::after { right: 190px; top: 30px; transform: rotate(38deg); transform-origin: top; }
+  .callout.c3 { top: 560px; left: 18px; } .callout.c3::after { left: 190px; bottom: 30px; transform: rotate(38deg); transform-origin: bottom; }
+  .callout.c4 { top: 560px; right: 18px; } .callout.c4::after { right: 190px; bottom: 30px; transform: rotate(-38deg); transform-origin: bottom; }
+  #dmgfloat { position: absolute; z-index: 25; font-size: 40px; font-weight: bold; color: #ff5a5a;
+    text-shadow: 0 0 16px rgba(255,60,60,.9); pointer-events: none; display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <canvas class="stars-bg" id="starsBg" width="1280" height="800"></canvas>
+
+  <div id="topbar">
+    <div class="title">✦ STARFALL PACT ✦</div>
+    <div class="objective">Complete a constellation on the shared star chart — first to 0 Life loses!</div>
+    <div style="flex:1"></div>
+    <div class="lifebox you"><span class="heart">♥</span><span>YOU</span><span class="num" id="lifeYou">30</span><span class="shield" id="shieldYou"></span></div>
+    <div class="lifebox foe"><span class="heart">♥</span><span>ASTRAEA</span><span class="num" id="lifeFoe">30</span><span class="shield" id="shieldFoe"></span></div>
+    <div id="turnbox">Turn 1</div>
+    <div id="emberbox">🔥 Ember 5</div>
+  </div>
+
+  <div id="foehand"><div class="label">ASTRAEA'S HAND ▸</div><span id="foeCards"></span></div>
+
+  <div id="telegraph"></div>
+
+  <div id="mid">
+    <div id="logpanel"><h3>✦ STAR LOG</h3><div id="log"></div></div>
+    <div id="chartwrap">
+      <div id="charttitle">✦ THE STAR CHART ✦</div>
+      <div id="chartsub">Both sides place stars here — complete a line to unleash its reward!</div>
+      <div id="chart"></div>
+      <div id="chartrewards">
+        <span>ROW = <b>⚔ 8 damage</b></span>
+        <span>COLUMN = <b>✚ heal 6</b></span>
+        <span>DIAGONAL = <b>🃏 draw 3</b></span>
+        <span>Same suit in a line: <b>+4</b></span>
+      </div>
+    </div>
+    <div id="legend">
+      <h3>✦ LEGEND</h3>
+      <div class="suit"><span class="ic" style="color:#ff6a4a">🔥</span><span><b>EMBER</b> — red flame<br>+2 damage</span></div>
+      <div class="suit"><span class="ic" style="color:#5aa8ff">💧</span><span><b>TIDE</b> — blue drop<br>heal 2 when placed</span></div>
+      <div class="suit"><span class="ic" style="color:#c98a4a">⛰️</span><span><b>STONE</b> — brown mountain<br>+3 shield when placed</span></div>
+      <div class="suit"><span class="ic" style="color:#5ad07a">🌀</span><span><b>GALE</b> — green swirl<br>draw 1 when placed</span></div>
+      <div class="rule"><b>YOUR stars</b> are gold ✦ &nbsp; <b>ASTRAEA's stars</b> are red ✦</div>
+      <div class="rule"><b>Block her!</b> Take the cell she is eyeing (red ? ghost) before she completes a line.</div>
+      <div class="rule"><b>Cost</b> is paid in 🔥 Ember. You gain <b>+2 Ember</b> and draw <b>2 cards</b> each turn.</div>
+      <div class="rule">Cards: <b>1–3</b> keys play a card · <b>Space</b> ends turn · <b>R</b> restart · <b>M</b> mute</div>
+    </div>
+  </div>
+
+  <div id="handwrap">
+    <div id="handlabel">YOUR HAND — click a card, then click an empty star cell</div>
+    <div id="hand"></div>
+  </div>
+
+  <div id="controls">
+    <button id="endTurnBtn">END TURN ⏎</button>
+    <button id="restartBtn">RESTART (R)</button>
+    <button id="muteBtn">SOUND: ON (M)</button>
+    <span id="hint">Click a card, then an empty cell on the chart. Complete a row, column or diagonal!</span>
+    <span id="deckinfo"></span>
+  </div>
+
+  <div id="dmgfloat"></div>
+  <div id="callouts" class="hidden">
+    <div class="callout c1">✦ YOUR final star completes the row — <b>8 damage!</b></div>
+    <div class="callout c2">✦ ASTRAEA's red stars — <b>block her line!</b></div>
+    <div class="callout c3">✦ Big value, big cost — <b>Ember pays</b></div>
+    <div class="callout c4">✦ Same-suit line = <b>+4 bonus</b></div>
+  </div>
+
+  <div id="titleScreen" class="overlay">
+    <h1>✦ STARFALL PACT ✦</h1>
+    <h2>A shared star-chart card duel under a falling sky</h2>
+    <div class="howto">
+      You and the rival stargazer <b>ASTRAEA</b> place stars on the <b>same 3×3 star chart</b>.<br>
+      Complete a <b>row</b> (⚔ 8 damage), a <b>column</b> (✚ heal 6) or a <b>diagonal</b> (🃏 draw 3).<br>
+      Same-suit stars in a line add <b>+4</b>. Block her constellations by taking her cell!<br>
+      Each card costs 🔥 Ember and deals its star value in damage. First to <b>0 Life</b> wins.
+    </div>
+    <button class="bigbtn" id="startBtn">✦ CLICK TO BEGIN ✦</button>
+    <div style="margin-top:16px;font-size:13px;color:#9fb4ff">Keys: 1–7 play a card · Space ends turn · R restart · M mute</div>
+  </div>
+
+  <div id="winScreen" class="overlay hidden">
+    <h1>★ VICTORY ★</h1>
+    <h2>The sky is yours — ASTRAEA's stars fade to dawn.</h2>
+    <div class="stats" id="winStats"></div>
+    <button class="bigbtn" id="againWinBtn">PLAY AGAIN (R)</button>
+  </div>
+
+  <div id="lossScreen" class="overlay hidden">
+    <h1>✦ DEFEAT ✦</h1>
+    <h2>ASTRAEA's constellation outshines you… this night.</h2>
+    <div class="stats" id="lossStats"></div>
+    <button class="bigbtn" id="againLossBtn">TRY AGAIN (R)</button>
+  </div>
+</div>
+
+<script src="src/audio.js"></script>
+<script src="src/cards.js"></script>
+<script src="src/state.js"></script>
+<script src="src/ai.js"></script>
+<script src="src/render.js"></script>
+<script src="src/input.js"></script>
+<script src="src/shots.js"></script>
+<script src="src/main.js"></script>
+</body>
+</html>
